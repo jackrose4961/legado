@@ -40,14 +40,17 @@ class OnLineImportActivity :
                 "txtRule" -> showDialogFragment(
                     ImportTxtTocRuleDialog(it.second, true)
                 )
+                "dictRule" -> showDialogFragment(
+                    ImportDictRuleDialog(it.second, true)
+                )
             }
         }
         viewModel.errorLive.observe(this) {
             finallyDialog(getString(R.string.error), it)
         }
         intent.data?.let {
-            val url = it.query?.substringAfter("src=")
-            if (url.isNullOrBlank()) {
+            val url = it.getQueryParameter("src")
+            if (url.isNullOrEmpty()) {
                 finish()
                 return
             }
@@ -55,9 +58,11 @@ class OnLineImportActivity :
                 "/bookSource" -> showDialogFragment(
                     ImportBookSourceDialog(url, true)
                 )
+
                 "/rssSource" -> showDialogFragment(
                     ImportRssSourceDialog(url, true)
                 )
+
                 "/replaceRule" -> showDialogFragment(
                     ImportReplaceRuleDialog(url, true)
                 )
@@ -66,6 +71,9 @@ class OnLineImportActivity :
                 )
                 "/httpTTS" -> showDialogFragment(
                     ImportHttpTtsDialog(url, true)
+                )
+                "/dictRule" -> showDialogFragment(
+                    ImportDictRuleDialog(url, true)
                 )
                 "/theme" -> showDialogFragment(
                     ImportThemeDialog(url, true)
