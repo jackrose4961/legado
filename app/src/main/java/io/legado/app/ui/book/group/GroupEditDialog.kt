@@ -20,14 +20,14 @@ class GroupEditDialog() : BaseDialogFragment(R.layout.dialog_book_group_edit) {
 
     constructor(bookGroup: BookGroup? = null) : this() {
         arguments = Bundle().apply {
-            putParcelable("group", bookGroup)
+            putParcelable("group", bookGroup?.copy())
         }
     }
 
     private val binding by viewBinding(DialogBookGroupEditBinding::bind)
     private val viewModel by viewModels<GroupViewModel>()
     private var bookGroup: BookGroup? = null
-    val selectImage = registerForActivityResult(SelectImageContract()) {
+    private val selectImage = registerForActivityResult(SelectImageContract()) {
         it ?: return@registerForActivityResult
         it.uri ?: return@registerForActivityResult
         readUri(it.uri) { fileDoc, inputStream ->
@@ -58,9 +58,11 @@ class GroupEditDialog() : BaseDialogFragment(R.layout.dialog_book_group_edit) {
         @Suppress("DEPRECATION")
         bookGroup = arguments?.getParcelable("group")
         bookGroup?.let {
-            binding.btnDelete.visible()
+            binding.btnDelete.visible(it.groupId > 0 || it.groupId == Long.MIN_VALUE)
             binding.tieGroupName.setText(it.groupName)
             binding.ivCover.load(it.cover)
+            binding.spSort.setSelection(it.bookSort + 1)
+            binding.cbEnableRefresh.isChecked = it.enableRefresh
         } ?: let {
             binding.toolBar.title = getString(R.string.add_group)
             binding.btnDelete.gone()
@@ -78,14 +80,24 @@ class GroupEditDialog() : BaseDialogFragment(R.layout.dialog_book_group_edit) {
                 if (groupName.isNullOrEmpty()) {
                     toastOnUi("分组名称不能为空")
                 } else {
+                    val bookSort = binding.spSort.selectedItemPosition - 1
+                    val coverPath = binding.ivCover.bitmapPath
+                    val enableRefresh = binding.cbEnableRefresh.isChecked
                     bookGroup?.let {
                         it.groupName = groupName
-                        it.cover = binding.ivCover.bitmapPath
+                        it.cover = coverPath
+                        it.bookSort = bookSort
+                        it.enableRefresh = enableRefresh
                         viewModel.upGroup(it) {
                             dismiss()
                         }
                     } ?: let {
-                        viewModel.addGroup(groupName, binding.ivCover.bitmapPath) {
+                        viewModel.addGroup(
+                            groupName,
+                            bookSort,
+                            enableRefresh,
+                            coverPath
+                        ) {
                             dismiss()
                         }
                     }
